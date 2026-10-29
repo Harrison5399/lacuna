@@ -1,0 +1,11 @@
+# Every setting of the ClinicalTrials.gov study reader (clinicaltrials.py). An experiment overrides any of them
+# under [literature.reader.clinicaltrials]. The merged settings are part of the cache fingerprint.
+
+# The text read, in this order: title, summary, description, outcomes, eligibility.
+sections = ["title", "summary", "description", "outcomes"]
+
+[facts]                         # the registry's coded interventions x conditions, as claims
+enabled = true
+relation = "tested_for"         # add it to [expand.literature] relations for trials to grow the experiment graph
+max_conditions = 10             # a trial coding more conditions is an umbrella study (every lymphoma and brain
+                                # tumour); its pairs say little about each one, so it gives no facts

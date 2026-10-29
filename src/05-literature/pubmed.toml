@@ -1,0 +1,16 @@
+# Every setting of the PubMed / PMC paper reader (pubmed.py). An experiment overrides any of them under
+# [literature.reader.pubmed]. The merged settings are part of the cache fingerprint.
+
+# Body sections that are back matter, never read: a title containing any of these is skipped.
+skip = ["acknowledg", "funding", "conflict", "competing", "author contribution", "data availability",
+        "availability of data", "supplementa", "abbreviation", "ethic", "consent", "declaration", "disclosure"]
+# Elements that aren't running text, dropped with everything inside them wherever they are.
+skip_inside = ["caption", "fig", "table-wrap"]
+other = "other"                 # the section name for a title that matches nothing below
+
+[sections]                      # section name -> words its title may contain, checked in this order
+intro = ["introduction", "background"]
+methods = ["method", "material", "experimental", "patients and"]
+results = ["result", "finding"]
+discussion = ["discussion"]
+conclusions = ["conclusion", "summary"]

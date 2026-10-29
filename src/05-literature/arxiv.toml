@@ -1,0 +1,19 @@
+# Every setting of the arXiv paper reader (arxiv.py). An experiment overrides any of them under
+# [literature.reader.arxiv]. The merged settings are part of the cache fingerprint.
+
+# Body sections that are back matter, never read: a title containing any of these is skipped.
+skip = ["acknowledg", "funding", "conflict", "competing", "author contribution", "data availability",
+        "availability of data", "supplementa", "abbreviation", "ethic", "consent", "declaration", "disclosure",
+        "impact statement", "limitations"]
+read_classes = ["ltx_section"]  # the top-level <section>s that are read; add "ltx_appendix" for appendices
+drop_tags = ["cite", "figure", "table", "img", "svg"]   # removed with their text: citations, figures, tables, equations
+drop_classes = ["ltx_note", "ltx_tag"]                   # footnotes; section / item / equation numbers
+math = "alttext"                # inline math: "alttext" (its LaTeX) or "drop"
+other = "other"                 # the section name for a title that matches nothing below
+
+[sections]                      # section name -> words its title may contain, checked in this order
+intro = ["introduction", "background", "related work", "motivation"]
+methods = ["method", "material", "experimental", "approach", "model", "dataset", "data and", "setup", "implementation"]
+results = ["result", "finding", "experiment", "evaluation", "analysis"]
+discussion = ["discussion"]
+conclusions = ["conclusion", "summary", "future work"]

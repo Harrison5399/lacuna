@@ -1,0 +1,92 @@
+# A check that a paper source other than PubMed works end to end: the examples experiment, downloading from arXiv
+# only (its biology, imaging and medical physics papers), with tiny limits and its own pool.
+name = "test_arxiv"
+goal = "new treatment avenues for glioblastoma"
+
+[sources]
+mesh = "2026"
+hgnc = "2026-10-06"
+
+[linking]
+types = ["disease", "chemical", "gene", "anatomy", "process", "procedure", "organism", "protocol"]
+needs_context = ["abbreviation", "acronym", "embedded_abbreviation", "embedded_acronym",
+                 "alias_symbol", "prev_symbol", "withdrawn_symbol"]
+prefer = ["hgnc", "mesh"]
+min_score = 0.8
+stoplist = [
+    "mesh:D004194",  # Disease
+    "mesh:D013812",  # Therapeutics
+    "mesh:D008722",  # Methods
+    "mesh:D012106",  # Research
+    "mesh:D005796",  # Genes
+    "mesh:D011506",  # Proteins
+    "mesh:D004798",  # Enzymes
+    "mesh:D009154",  # Mutation
+    "mesh:D010641",  # Phenotype
+    "mesh:D006128",  # Growth
+    "mesh:D003643",  # Death
+    "mesh:D013995",  # Time
+    "mesh:D012306",  # Risk
+    "mesh:D015994",  # Incidence
+    "mesh:D004777",  # Environment
+    "mesh:D012380",  # Role
+    "mesh:D012680",  # Sensitivity and Specificity ("sensitivity")
+    "mesh:D066298",  # In Vitro Techniques
+    "mesh:D002460",  # Cell Line
+    "mesh:D000818",  # Animals
+    "mesh:D010361",  # Patients
+]
+
+[linking.mesh]
+descriptor_classes = ["topical", "check_tag"]
+other_concepts = "weak"
+
+[linking.hgnc]
+locus_groups = ["protein-coding gene", "non-coding RNA"]
+withdrawn = true
+
+[query]
+seed_types = ["disease", "chemical", "gene"]
+min_seed_depth = 3
+
+[expand.mesh]
+tree_branches = ["C", "F03"]
+tree_up = 1
+tree_down = 3
+supplementary = true
+see_also = true
+actions = true
+max_class_size = 100
+
+[expand.hgnc]
+gene_groups = true
+max_group_size = 50
+
+[expand.literature]
+min_papers = 2
+relations = ["inhibits", "activates", "treats", "causes", "associated_with", "co_occurs"]
+max_share = 0.5
+
+[topics]
+types = ["disease", "chemical", "gene", "procedure", "protocol"]
+reasons = ["seed", "descendant", "ancestor", "relative", "split", "literature", "supplementary", "see_also",
+           "same_drug_class", "gene_group_member"]
+max_distance = 3
+max_topics = 3
+split_cap = 5000        # splitting is PubMed's; arXiv topics are never split
+split_reasons = ["seed", "descendant", "split"]
+paper_budget = 20000    # papers across all rounds, as the [download.arxiv] limit counts them
+
+[download]
+pool = "test_arxiv"
+sources = ["arxiv"]
+
+[download.arxiv]        # max_papers, categories, fulltext (src/shared/arxiv_api.py)
+max_papers = 4
+categories = ["q-bio.*", "eess.IV", "physics.med-ph"]
+fulltext = true
+
+[literature]
+pipeline = "biomed"
+# arXiv papers are read by src/05-literature/arxiv.py; override its settings (arxiv.toml) under
+# [literature.reader.arxiv].

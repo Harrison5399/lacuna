@@ -1,0 +1,18 @@
+# Downloads, built tables, pools and run outputs: rebuilt by the steps, too big to commit
+data/
+corpora/
+runs/
+testing/
+
+# Environments and credentials
+.env
+.env.*
+*.env
+
+# Python, notebooks, interrupted downloads, Slurm job logs
+__pycache__/
+.ipynb_checkpoints/
+*.part
+*.tmp
+lacuna-*.out
+lacuna-*.err

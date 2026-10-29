@@ -1,0 +1,106 @@
+# Live runs: the newest release of every source.
+name = "default"
+goal = "new treatment avenues for glioblastoma"
+
+[sources]
+mesh = "2026"
+hgnc = "2026-10-06"
+
+# What the linker may link to. Shared settings apply to every source; [linking.<source>] only to that source.
+[linking]
+# Mental disorders are typed disease (MeSH F03); the rest of the psychology branch ("understanding" ->
+# Comprehension, "association", "role") only adds everyday words, so "psychology" is left out.
+types = ["disease", "chemical", "gene", "anatomy", "process", "procedure", "organism", "protocol"]
+needs_context = ["abbreviation", "acronym", "embedded_abbreviation", "embedded_acronym",
+                 "alias_symbol", "prev_symbol", "withdrawn_symbol"]
+prefer = ["hgnc", "mesh"]
+min_score = 0.8
+# Generic concepts that would connect everything, never linked (the idea of SemRep's generic-concept list).
+stoplist = [
+    "mesh:D004194",  # Disease
+    "mesh:D013812",  # Therapeutics
+    "mesh:D008722",  # Methods
+    "mesh:D012106",  # Research
+    "mesh:D005796",  # Genes
+    "mesh:D011506",  # Proteins
+    "mesh:D004798",  # Enzymes
+    "mesh:D009154",  # Mutation
+    "mesh:D010641",  # Phenotype
+    "mesh:D006128",  # Growth
+    "mesh:D003643",  # Death
+    "mesh:D013995",  # Time
+    "mesh:D012306",  # Risk
+    "mesh:D015994",  # Incidence
+    "mesh:D004777",  # Environment
+    "mesh:D012380",  # Role
+    "mesh:D012680",  # Sensitivity and Specificity ("sensitivity")
+    "mesh:D066298",  # In Vitro Techniques
+    "mesh:D002460",  # Cell Line
+    "mesh:D000818",  # Animals
+    "mesh:D010361",  # Patients
+]
+
+[linking.mesh]
+descriptor_classes = ["topical", "check_tag"]
+other_concepts = "weak"
+
+[linking.hgnc]
+locus_groups = ["protein-coding gene", "non-coding RNA"]
+withdrawn = true
+
+# Step 01: which concepts in the goal become seeds.
+[query]
+seed_types = ["disease", "chemical", "gene"]
+min_seed_depth = 3      # MeSH headings nearer the top of the tree than this ("Drug", "Neoplasms") aren't seeds
+
+# Step 02: how far the graph reaches from the seeds, per source.
+[expand.mesh]
+tree_branches = ["C", "F03"]  # walk the tree only for diseases (the chemical tree groups drugs by structure)
+tree_up = 1             # branching levels up the tree from each seed; everything under that ancestor is in reach
+tree_down = 3           # but no more than this many levels below the seed's own level
+supplementary = true    # supplementary records (rare diseases, newer drugs) filed under those headings
+see_also = true         # MeSH's see-also links from the seeds
+actions = true          # drug seeds -> their drug classes
+max_class_size = 100    # and the class's other drugs, if it has at most this many
+
+[expand.hgnc]
+gene_groups = true      # gene seeds -> their families and the other members
+max_group_size = 50     # skip families bigger than this (e.g. hundreds of zinc fingers)
+
+[expand.literature]     # concepts the papers connect to the graph (from 05)
+min_papers = 2          # an edge connects only if at least this many papers state it without negating it
+# tested_for: a trial registry's coded intervention x condition (src/05-literature/clinicaltrials.py)
+relations = ["inhibits", "activates", "treats", "causes", "associated_with", "co_occurs", "tested_for"]
+max_share = 0.5         # a concept in more than this share of the experiment's papers is a hub: never added as a new node
+
+# Step 03: which graph nodes become download topics, one round at a time.
+[topics]
+types = ["disease", "chemical", "gene", "procedure", "protocol"]   # what can be a download topic (not anatomy, organisms, processes)
+reasons = ["seed", "descendant", "ancestor", "relative", "split", "literature", "supplementary", "see_also",
+           "same_drug_class", "gene_group_member"]   # node reasons that can become topics, in priority order
+max_distance = 3        # nodes further from the seeds wait for a later round's graph
+max_topics = 40         # new topics per round
+split_cap = 5000        # a MeSH topic matching more PubMed papers than this is split into its children...
+split_reasons = ["seed", "descendant", "split"]   # ...if it's one of these; other big topics keep only papers tagged with the heading itself
+paper_budget = 20000    # papers across all rounds, as the [download.pubmed] limits count them
+
+# Step 04: where topics are downloaded from, and how much of each. Records go into a pool shared by every
+# experiment that names it (each paper and trial stored once); what this experiment picked stays in its runs folder.
+[download]
+pool = "lacuna"
+sources = ["pubmed", "clinicaltrials"]
+
+[download.pubmed]       # max_fulltext, max_abstract_only, language, require_abstract, years, require, exclude (src/shared/ncbi.py)
+max_fulltext = 500
+max_abstract_only = 200
+
+[download.clinicaltrials]
+max_studies = 200
+
+# Step 05: how the papers are read into claims (cached in the pool per these settings and the linker's).
+[literature]
+pipeline = "biomed"             # a folder in src/pipelines/; every setting it has is written out in its defaults.toml
+# Override any pipeline setting under [literature.biomed], and any paper-reader setting (src/05-literature/<source>.toml)
+# under [literature.reader.<source>]; tables merge key by key. For example:
+#   [literature.biomed.coreference]
+#   enabled = false

@@ -1,0 +1,15 @@
+scispacy==0.6.2
+spacy==3.7.5
+spacy-transformers
+click
+numpy<2
+cupy-cuda12x
+scikit-learn==1.9.1
+duckdb
+pyarrow<26
+ipykernel
+lxml
+fastcoref
+datasets<4
+pandas<3
+en_core_sci_scibert @ https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_scibert-0.5.4.tar.gz

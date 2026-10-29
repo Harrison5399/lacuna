@@ -1,0 +1,55 @@
+# Every setting of the biomedical reading pipeline. An experiment overrides any of them under [literature.biomed]
+# (tables merge key by key), e.g. [literature.biomed.coreference] enabled = false. The merged settings are part of
+# the cache fingerprint, so changing one reads the papers again.
+
+model = "en_core_sci_scibert"   # scispaCy pipeline: sentences, parse, entities
+batch_size = 32                 # paragraphs per spaCy batch (speed only)
+min_depth = 2                   # concepts nearer the top of their hierarchy than this ("Cells", "Neoplasms") aren't linked
+cooccurrence = true             # keep pairs with no relation cue in their sentence, as "co_occurs" claims
+
+[linker]                        # finding and linking mentions (common/linking.py)
+max_words = 8                   # longest dictionary name tried, in words
+single_word_pos = ["NOUN", "PROPN"]   # a one-word name counts only as one of these, so "leads to" isn't the metal
+fuzzy_candidates = 10           # candidates the fuzzy-match index returns per mention (when the linker has an index)
+
+[coreference]                   # "it", "the drug" -> the concept they stand for (common/coreference.py)
+enabled = true
+model = "FCoref"                # fastcoref's model: FCoref (fast) or LingMessCoref (more accurate, slower)
+model_path = "biu-nlp/f-coref"  # its Hugging Face model (biu-nlp/lingmess-coref for LingMessCoref)
+
+[lexicon]                       # the words common/relations.py reads relations, negation and hedging from
+negations = ["no", "not", "without", "fail", "lack", "absence", "neither", "nor", "none", "unable", "never"]
+pseudo = ["not only", "not limited", "not just", "not necessarily", "not exclusively", "no doubt", "no longer",
+          "not surprisingly"]   # look like negations but aren't (NegEx's pseudo-negations)
+hedges = ["may", "might", "could", "suggest", "potential", "potentially", "possible", "possibly", "likely", "appear",
+          "seem", "hypothesize", "propose", "speculate", "putative", "presumably", "unclear"]
+undirected = ["associated_with"]   # relations stored in ID order, like co_occurs
+
+[lexicon.cues]                  # relation -> its cue lemmas, checked in this order
+inhibits = ["inhibit", "inhibition", "inhibitor", "suppress", "block", "reduce", "decrease", "downregulate",
+            "attenuate", "abrogate", "impair", "repress", "antagonize", "inactivate", "diminish", "lower"]
+activates = ["activate", "activation", "increase", "induce", "enhance", "upregulate", "promote", "stimulate",
+             "elevate", "potentiate", "trigger", "augment"]
+treats = ["treat", "treatment", "therapy", "cure", "improve", "prolong", "benefit", "efficacy", "effective"]
+causes = ["cause", "lead", "drive", "contribute", "result"]
+associated_with = ["associate", "association", "correlate", "correlation", "link", "relate", "predict"]
+
+[lexicon.typed.treats]          # a typed relation points from these subject types to these object types
+subjects = ["chemical", "procedure", "protocol"]
+objects = ["disease"]
+
+[context]                       # what a paper's PubMed record says about every claim in it (context.py)
+primary_sections = ["results", "conclusions"]          # sections that report the paper's own findings
+primary_abstract_labels = ["", "results", "conclusions"]   # abstract parts that do ("" = an unstructured abstract)
+default_study_type = "research"
+
+[context.study_types]           # publication type -> study type, first match wins; a trailing * matches any ending
+trial = ["Clinical Trial*", "Randomized Controlled Trial"]
+review = ["Review", "Systematic Review", "Meta-Analysis"]
+case_report = ["Case Reports"]
+
+[context.species]               # the paper's MeSH tags -> its species / model
+"mesh:D006801" = "human"
+"mesh:D051379" = "mouse"
+"mesh:D051381" = "rat"
+"mesh:D045744" = "cell_line"
